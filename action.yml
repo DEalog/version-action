@@ -1,0 +1,29 @@
+name: "Version action"
+description: "GitHub composite run steps action to set a version number from the current tag, if available, or from the commit SHA."
+inputs:
+  fallback-sha-length:
+    description: "Length of short SHA for fallback."
+    required: true
+    default: "8"
+  fallback-prefix:
+    description: "Version prefix for fallback."
+    required: false
+    default: "SNAPSHOT-"
+  artifact:
+    description: "Artifact filename."
+    required: true
+    default: "version.txt"
+outputs:
+  version_number:
+    description: "Version"
+    value: ${{ steps.version.outputs.version_number }}
+runs:
+  using: "composite"
+  steps: 
+    - id: version
+      run: echo "::set-output name=version_number::$(git describe --exact-match --tags 2> /dev/null || echo \"${{ inputs.fallback-prefix }}$(git rev-parse --short=${{ inputs.fallback-sha-length }} HEAD)\")"
+      shell: bash
+    - run: echo ${{ steps.version.outputs.version_number }} >> ${{ inputs.artifact }}
+      shell: bash
+    - run: echo "Version set to ${{ steps.version.outputs.version_number }} with artifact ${{ inputs.artifact }}."
+      shell: bash
